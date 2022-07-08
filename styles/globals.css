@@ -1,0 +1,30 @@
+@tailwind base;
+@layer components {
+	.unvisited {
+		@apply bg-white;
+	}
+	.visited {
+		@apply bg-teal-200;
+		transition: all 500ms;
+	}
+	.backtrack {
+		@apply !bg-red-400;
+		transition: all 500ms;
+	}
+
+	button {
+		@apply px-6 py-2 bg-blue-600 text-white;
+	}
+
+	button:disabled {
+		@apply bg-gray-300 text-gray-600;
+	}
+}
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
