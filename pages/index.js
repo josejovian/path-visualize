@@ -92,7 +92,7 @@ export default function Home() {
 	const [wrapper, setWrapper] = useState(null);
 	const [init, setInit] = useState(0);
 	const [start, setStart] = useState([1, 1]);
-	const [dimensions, setDimensions] = useState([12, 24]);
+	const [dimensions, setDimensions] = useState([6, 12]);
 	const [goal, setGoal] = useState([
 		2 * dimensions[0] - 1,
 		2 * dimensions[1] - 1,
@@ -125,7 +125,9 @@ export default function Home() {
 		}
 
 		if (path.length > 0) {
-			backtrack(path, [y, x]);
+			setTimeout(() => {
+				backtrack(path, [y, x]);
+			}, 10);
 		}
 	}
 
@@ -139,7 +141,9 @@ export default function Home() {
 		let answer = [];
 
 		function oneTraverse(path) {
-			if (terminate) {
+			if (terminate || stack.length === 0) {
+				setTerminate(true);
+				setWorking(false);
 				return;
 			}
 
@@ -369,6 +373,59 @@ export default function Home() {
 		}, 600);
 	}
 
+	function toggleWall(y, x) {
+		if (working || terminate) return;
+		if (y === start[0] && x === start[1]) return;
+		if (y === goal[0] && x === goal[1]) return;
+
+		const _wrapper = [...wrapper];
+		const isWall = _wrapper[y][x].wall;
+		_wrapper[y][x].wall = !isWall;
+		templateDelta.forEach((d) => {
+			const _y = y + d[0],
+				_x = x + d[1];
+			if (checkBoundary(_y, _x, dimensions)) {
+				const direction1 = _wrapper[y][x][parseDelta(d)];
+				const direction2 = _wrapper[_y][_x][getOpposite(parseDelta(d))];
+				_wrapper[y][x][parseDelta(d)] = 1 - direction1;
+				_wrapper[_y][_x][getOpposite(parseDelta(d))] = 1 - direction2;
+			}
+		});
+		setWrapper(_wrapper);
+	}
+
+	function emptyBoard() {
+		setTerminate(false);
+
+		const _wrapper = [...wrapper];
+		for (let y = 0; y < 2 * dimensions[0]; y++) {
+			for (let x = 0; x < 2 * dimensions[1]; x++) {
+				if (x === 0 || x === 2 * dimensions[1] - 1) continue;
+				if (y === 0 || y === 2 * dimensions[1] - 1) continue;
+
+				templateDelta.forEach((d) => {
+					const _y = y + d[0],
+						_x = x + d[1];
+					if (
+						_y > 0 &&
+						2 * dimensions[0] > _y &&
+						_x > 0 &&
+						2 * dimensions[1] > _x
+					) {
+						_wrapper[y][x].wall = false;
+						_wrapper[_y][_x].wall = false;
+						_wrapper[_y][_x].visited = false;
+						_wrapper[_y][_x].distance = -1;
+						_wrapper[_y][_x].backtrack = false;
+						_wrapper[y][x][parseDelta(d)] = 1;
+						_wrapper[_y][_x][getOpposite(parseDelta(d))] = 1;
+					}
+				});
+			}
+		}
+		setWrapper(_wrapper);
+	}
+
 	useEffect(() => {
 		initializeMaze();
 	}, []);
@@ -384,7 +441,13 @@ export default function Home() {
 	}, [map, init]);
 
 	return (
-		<div className="flex flex-col items-center">
+		<div
+			className="flex flex-col items-center"
+			onContextMenu={(e) => {
+				e.preventDefault();
+				return false;
+			}}
+		>
 			<table>
 				<tbody>
 					{wrapper &&
@@ -400,17 +463,27 @@ export default function Home() {
 									return (
 										<td
 											key={`cell-${idx1}-${idx2}`}
+											onClick={() =>
+												toggleWall(idx1, idx2)
+											}
 											className={clsx(
 												"w-8 h-8 text-center",
-												"border-0 border-teal-600 text-xs",
-												wall && "bg-teal-800",
+												"border-2 border-white text-xs",
+												wall &&
+													"bg-teal-800 hover:bg-teal-900",
 												distance > -1
 													? "visited hover:bg-teal-400"
 													: "unvisited",
 												distance === -1 &&
 													!wall &&
 													"hover:bg-gray-200",
-												backtrack && "backtrack"
+												backtrack && "backtrack",
+												idx1 === start[0] &&
+													idx2 === start[1] &&
+													"bg-green-400 hover:bg-green-600",
+												idx1 === goal[0] &&
+													idx2 === goal[1] &&
+													"bg-orange-400 hover:bg-orange-600"
 											)}
 										>
 											{!wall && distance > 0 && distance}
@@ -427,6 +500,12 @@ export default function Home() {
 					onClick={() => resetMaze()}
 				>
 					New Maze
+				</button>
+				<button
+					disabled={working || resetButton}
+					onClick={() => emptyBoard()}
+				>
+					Clear Board
 				</button>
 				<button
 					disabled={working || resetButton}

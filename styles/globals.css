@@ -8,7 +8,7 @@
 		transition: all 500ms;
 	}
 	.backtrack {
-		@apply !bg-red-400;
+		@apply bg-red-400;
 		transition: all 500ms;
 	}
 
