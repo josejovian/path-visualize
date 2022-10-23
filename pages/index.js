@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 function parseDelta(delta) {
 	if (delta[0] === 0) {
@@ -103,7 +103,7 @@ export default function Home() {
 
 	const [resetButton, setResetButton] = useState(false);
 
-	function backtrack(path, previous) {
+	const backtrack = useCallback((path, previous) => {
 		let [y, x] = path.pop();
 		let [_y, _x] = previous;
 
@@ -127,11 +127,11 @@ export default function Home() {
 		if (path.length > 0) {
 			setTimeout(() => {
 				backtrack(path, [y, x]);
-			}, 10);
+			}, 1);
 		}
-	}
+	}, [start, wrapper]);
 
-	function traverse(algorithm = "dfs") {
+	const traverse = useCallback((algorithm = "dfs") => {
 		if (working) {
 			return;
 		}
@@ -207,13 +207,16 @@ export default function Home() {
 				setTimeout(() => {
 					oneTraverse(path);
 				}, 1);
+			} else {
+				setTerminate(true);
+				setWorking(false);
 			}
 		}
 
 		oneTraverse([...answer]);
-	}
+	}, [backtrack, dimensions, goal, terminate, working, wrapper]);
 
-	function generateMaze() {
+	const generateMaze = useCallback(() => {
 		if (!map) return;
 
 		setInit(1);
@@ -256,9 +259,9 @@ export default function Home() {
 		}
 
 		setInit(2);
-	}
+	}, [dimensions, map]);
 
-	function generateMazeWrapper() {
+	const generateMazeWrapper = useCallback(() => {
 		setInit(3);
 
 		let templateWrapper = [];
@@ -334,9 +337,9 @@ export default function Home() {
 		}
 
 		setWrapper(templateWrapper);
-	}
+	}, [dimensions, map]);
 
-	function initializeMaze() {
+	const initializeMaze = useCallback(() => {
 		let templateMap = [];
 
 		for (let j = 0; j < dimensions[0]; j++) {
@@ -355,7 +358,7 @@ export default function Home() {
 		}
 
 		setMap(templateMap);
-	}
+	}, [dimensions]);
 
 	function resetMaze() {
 		setTerminate(false);
@@ -373,7 +376,7 @@ export default function Home() {
 		}, 600);
 	}
 
-	function toggleWall(y, x) {
+	const toggleWall = useCallback((y, x) => {
 		if (working || terminate) return;
 		if (y === start[0] && x === start[1]) return;
 		if (y === goal[0] && x === goal[1]) return;
@@ -392,9 +395,9 @@ export default function Home() {
 			}
 		});
 		setWrapper(_wrapper);
-	}
+	}, [dimensions, goal, start, terminate, working, wrapper]);
 
-	function emptyBoard() {
+	const emptyBoard = useCallback(() => {
 		setTerminate(false);
 
 		const _wrapper = [...wrapper];
@@ -424,11 +427,11 @@ export default function Home() {
 			}
 		}
 		setWrapper(_wrapper);
-	}
+	}, [dimensions, wrapper]);
 
 	useEffect(() => {
 		initializeMaze();
-	}, []);
+	}, [initializeMaze]);
 
 	useEffect(() => {
 		if (init === 0 && map) {
@@ -438,7 +441,7 @@ export default function Home() {
 		if (init === 2) {
 			generateMazeWrapper();
 		}
-	}, [map, init]);
+	}, [map, init, generateMaze, generateMazeWrapper]);
 
 	return (
 		<div
